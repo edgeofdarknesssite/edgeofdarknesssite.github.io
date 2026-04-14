@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Catalog</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="bg-layer" aria-hidden="true">
+    <canvas id="fxCanvas" class="fx-canvas"></canvas>
+    <div class="bg-clouds"></div>
+    <div class="bg-orb orb-a"></div>
+    <div class="bg-orb orb-b"></div>
+    <div class="bg-orb orb-c"></div>
+    <div class="bg-grid"></div>
+    <div class="bg-scanlines"></div>
+    <div class="bg-columns"></div>
+    <div class="bg-datamosh"></div>
+    <div class="bg-vignette"></div>
+    <div id="glyphRain" class="glyph-rain"></div>
+    <div class="bg-noise"></div>
+  </div>
+
+  <section id="loadingScreen" class="loading-screen active" aria-live="polite">
+    <div class="loading-sky"></div>
+    <div class="loading-cloud cloud-a"></div>
+    <div class="loading-cloud cloud-b"></div>
+    <div class="loading-cloud cloud-c"></div>
+    <div class="loading-shell panel">
+      <div class="loading-ring"></div>
+      <div class="loading-progress"><span id="loadingBar"></span></div>
+      <div id="loadingPercent" class="loading-percent">0%</div>
+    </div>
+  </section>
+
+  <div id="toast" class="toast hidden"></div>
+
+  <div id="app">
+    <section id="loginScreen" class="screen active">
+      <div class="login-shell">
+        <form id="loginForm" class="panel auth-panel" autocomplete="on">
+          <div class="auth-mark"></div>
+          <div class="field-group">
+            <input id="loginInput" class="input" type="text" placeholder="Логин" autocomplete="username" required />
+          </div>
+          <div class="field-group password-group">
+            <input id="passwordInput" class="input" type="password" placeholder="Пароль" autocomplete="current-password" required />
+            <button id="togglePasswordBtn" class="icon-button" type="button" aria-label="Показать пароль">◉</button>
+          </div>
+          <button class="button button-primary button-wide" type="submit">Войти</button>
+          <p id="loginMessage" class="form-message"></p>
+        </form>
+      </div>
+    </section>
+
+    <section id="dashboardScreen" class="screen">
+      <div class="app-shell">
+        <header class="topbar panel">
+          <div class="topbar-left">
+            <button id="sidebarToggleBtn" class="icon-button mobile-only" type="button" aria-label="Категории">☰</button>
+            <label class="search-box">
+              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M21 21l-4.4-4.4M10.7 18a7.3 7.3 0 1 1 0-14.6 7.3 7.3 0 0 1 0 14.6Z" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+              <input id="searchInput" class="search-input" type="search" placeholder="Поиск" />
+            </label>
+          </div>
+          <div class="topbar-right">
+            <button id="openConnectionModalBtn" class="button button-ghost" type="button">Supabase</button>
+            <button id="openTableModalBtn" class="button button-ghost" type="button">Таблица</button>
+            <button id="openCategoryModalBtn" class="button button-ghost" type="button">Категория</button>
+            <button id="openItemModalBtn" class="button button-primary" type="button">Карточка</button>
+            <button id="logoutBtn" class="button button-danger" type="button">Выход</button>
+          </div>
+        </header>
+
+        <div class="workspace">
+          <aside id="sidebar" class="sidebar panel">
+            <div id="categoryTabs" class="category-tabs"></div>
+          </aside>
+
+          <main class="content-area">
+            <section class="stats-strip">
+              <article class="stat panel"><span>Категории</span><strong id="statsCategories">0</strong></article>
+              <article class="stat panel"><span>Карточки</span><strong id="statsItems">0</strong></article>
+              <article class="stat panel"><span>Найдено</span><strong id="statsFiltered">0</strong></article>
+            </section>
+            <section id="categoriesContainer" class="content-list"></section>
+          </main>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  
+  <div id="itemModal" class="modal hidden" aria-hidden="true">
+    <div class="modal-backdrop" data-close-modal="true"></div>
+    <div class="modal-card panel detail-modal">
+      <button id="closeModalBtn" class="icon-button modal-close" type="button" aria-label="Закрыть">×</button>
+      <div class="detail-layout detail-layout-wide">
+        <aside id="modalDependenciesPanel" class="detail-dependencies panel hidden">
+          <div class="detail-dependencies-title">Зависимости</div>
+          <div id="modalDependenciesList" class="detail-dependencies-list"></div>
+        </aside>
+        <div class="detail-image-wrap"><img id="modalImage" src="" alt="Изображение карточки" /></div>
+        <div class="detail-side">
+          <h3 id="modalTitle"></h3>
+          <div class="code-box">
+            <span id="modalClassname"></span>
+            <button id="modalCopyBtn" class="button button-primary" type="button">Копировать classname</button>
+          </div>
+          <div id="modalPriceBox" class="code-box hidden">
+            <span id="modalPriceValue"></span>
+            <div class="modal-inline-actions">
+              <button id="modalCopyPriceBtn" class="button button-ghost" type="button">Копировать цену</button>
+              <button id="modalRecalcBtn" class="button button-primary" type="button">Пересчитать</button>
+            </div>
+          </div>
+          <div class="modal-inline-actions">
+            <button id="modalEditItemBtn" class="button button-ghost" type="button">Редактировать и связи</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="categoryModal" class="modal hidden" aria-hidden="true">
+    <div class="modal-backdrop" data-close-modal="true"></div>
+    <div class="modal-card panel form-modal">
+      <button class="icon-button modal-close" type="button" data-close-target="categoryModal">×</button>
+      <form id="categoryForm" class="stack-md">
+        <input id="categoryName" class="input" type="text" placeholder="Название категории" maxlength="120" required />
+        <label class="color-field" for="categoryColor">
+          <input id="categoryColor" class="color-input" type="color" value="#6ff4ff" />
+          <span class="color-field-label">Цвет категории</span>
+        </label>
+        <button class="button button-primary button-wide" type="submit">Сохранить</button>
+      </form>
+    </div>
+  </div>
+
+  <div id="createItemModal" class="modal hidden" aria-hidden="true">
+    <div class="modal-backdrop" data-close-modal="true"></div>
+    <div class="modal-card panel form-modal form-modal-wide">
+      <button class="icon-button modal-close" type="button" data-close-target="createItemModal">×</button>
+      <form id="itemForm" class="stack-md">
+        <div class="grid-2">
+          <select id="itemCategory" class="input" required></select>
+          <input id="itemTitle" class="input" type="text" placeholder="Название" maxlength="160" required />
+        </div>
+        <div class="grid-2">
+          <input id="itemClassname" class="input" type="text" placeholder="Classname" maxlength="255" required />
+          <input id="itemPrice" class="input" type="number" step="0.01" min="0" placeholder="Цена (необязательно)" />
+        </div>
+        <div id="uploadZone" class="upload-zone" tabindex="0">
+          <input id="itemImageFile" type="file" accept="image/*" hidden />
+          <div class="upload-text">Перетащи файл, вставь через Ctrl+V или нажми для выбора</div>
+        </div>
+        <div id="imagePreview" class="image-preview hidden">
+          <img id="previewImage" alt="Предпросмотр" />
+          <div class="preview-side">
+            <div id="previewName" class="preview-name"></div>
+            <button id="removePreviewBtn" class="button button-ghost" type="button">Убрать</button>
+          </div>
+        </div>
+        <input id="itemImageUrl" class="input" type="url" placeholder="или URL изображения" />
+        <button class="button button-primary button-wide" type="submit">Сохранить</button>
+      </form>
+    </div>
+  </div>
+
+  <div id="renameModal" class="modal hidden" aria-hidden="true">
+    <div class="modal-backdrop" data-close-modal="true"></div>
+    <div class="modal-card panel form-modal">
+      <button class="icon-button modal-close" type="button" data-close-target="renameModal">×</button>
+      <form id="renameForm" class="stack-md">
+        <input id="renameCategoryInput" class="input" type="text" placeholder="Новое название" maxlength="120" required />
+        <label class="color-field" for="renameCategoryColor">
+          <input id="renameCategoryColor" class="color-input" type="color" value="#6ff4ff" />
+          <span class="color-field-label">Цвет категории</span>
+        </label>
+        <button class="button button-primary button-wide" type="submit">Сохранить</button>
+      </form>
+    </div>
+  </div>
+
+  <div id="editItemModal" class="modal hidden" aria-hidden="true">
+    <div class="modal-backdrop" data-close-modal="true"></div>
+    <div class="modal-card panel form-modal">
+      <button class="icon-button modal-close" type="button" data-close-target="editItemModal">×</button>
+      <form id="editItemForm" class="stack-md">
+        <input id="editItemTitle" class="input" type="text" placeholder="Название" maxlength="160" required />
+        <input id="editItemPrice" class="input" type="number" step="0.01" min="0" placeholder="Цена" />
+        <div id="dependencyEditorWrap" class="stack-md dependency-editor-wrap">
+          <div class="dependency-editor-head">
+            <div>
+              <div class="dependency-editor-title">Связи с уже созданными карточками</div>
+              <div class="dependency-editor-note">Нажми на поиск, выбери категорию и отметь нужные карточки.</div>
+            </div>
+          </div>
+          <input id="editDependencySearch" class="input" type="search" placeholder="Поиск карточки для зависимости" />
+          <div id="editDependencyCategoryFilters" class="dependency-category-filters hidden"></div>
+          <div id="editDependencyList" class="dependency-editor-list"></div>
+        </div>
+        <button class="button button-primary button-wide" type="submit">Сохранить изменения</button>
+      </form>
+    </div>
+  </div>
+
+  <div id="priceModal" class="modal hidden" aria-hidden="true">
+    <div class="modal-backdrop" data-close-modal="true"></div>
+    <div class="modal-card panel form-modal">
+      <button class="icon-button modal-close" type="button" data-close-target="priceModal">×</button>
+      <div class="stack-md">
+        <div class="calc-base-line">Базовая цена: <strong id="calcBasePrice">—</strong></div>
+        <div class="grid-2">
+          <input id="calcQuantity" class="input" type="number" min="1" step="1" value="1" placeholder="Количество" />
+          <input id="calcPercent" class="input" type="number" min="0" step="0.01" value="0" placeholder="Процент" />
+        </div>
+        <div class="calc-actions">
+          <button id="calcDecreaseBtn" class="button button-ghost" type="button">Уменьшить</button>
+          <button id="calcIncreaseBtn" class="button button-primary" type="button">Увеличить</button>
+        </div>
+        <div class="calc-result-box">
+          <div>Сумма без процента: <strong id="calcSubtotal">—</strong></div>
+          <div>Изменение: <strong id="calcDelta">—</strong></div>
+          <div>Итоговая сумма: <strong id="calcResult">—</strong></div>
+          <div class="calc-formula">Формула: <strong id="calcFormula">—</strong></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="tableModal" class="modal hidden" aria-hidden="true">
+    <div class="modal-backdrop" data-close-modal="true"></div>
+    <div class="modal-card panel form-modal form-modal-table">
+      <button class="icon-button modal-close" type="button" data-close-target="tableModal">×</button>
+      <div class="stack-md">
+        <div class="table-toolbar">
+          <div class="table-toolbar-title">
+            <h3>Таблица предметов</h3>
+            <p>Список строится по текущему поиску и выбранной категории.</p>
+          </div>
+          <div class="table-toolbar-actions">
+            <input id="tablePercentInput" class="input" type="number" min="0" max="100" step="0.01" value="0" placeholder="Процент" />
+            <button id="tableDecreaseBtn" class="button button-ghost" type="button">Уменьшить</button>
+            <button id="tableIncreaseBtn" class="button button-primary" type="button">Увеличить</button>
+            <button id="tableApplyBtn" class="button button-primary" type="button">Применить ко всем</button>
+          </div>
+        </div>
+
+        <div class="table-summary-grid">
+          <article class="table-summary-card">
+            <span>Позиций с ценой</span>
+            <strong id="tableSummaryCount">0</strong>
+          </article>
+          <article class="table-summary-card">
+            <span>Сумма сейчас</span>
+            <strong id="tableSummaryBase">₽ 0</strong>
+          </article>
+          <article class="table-summary-card">
+            <span>Изменение</span>
+            <strong id="tableSummaryDelta">₽ 0</strong>
+          </article>
+          <article class="table-summary-card">
+            <span>Сумма после %</span>
+            <strong id="tableSummaryAdjusted">₽ 0</strong>
+          </article>
+        </div>
+
+        <div class="excel-shell">
+          <div class="excel-table">
+            <div class="excel-table-head">
+              <div>Категория</div>
+              <div>Картинка</div>
+              <div>Classname</div>
+              <div>Цена</div>
+              <div>Новая цена</div>
+              <div>Действия</div>
+            </div>
+            <div id="itemsTableContainer" class="excel-table-body"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<div id="connectionModal" class="modal hidden" aria-hidden="true">
+    <div class="modal-backdrop" data-close-modal="true"></div>
+    <div class="modal-card panel form-modal form-modal-wide">
+      <button class="icon-button modal-close" type="button" data-close-target="connectionModal">×</button>
+      <div class="stack-md connection-box">
+        <div class="connection-head">
+          <div id="connectionStatus" class="connection-status">Ожидание проверки</div>
+          <div id="connectionLatency" class="connection-latency">—</div>
+        </div>
+        <div class="connection-grid">
+          <div class="connection-cell"><span>URL</span><strong id="connectionUrl">—</strong></div>
+          <div class="connection-cell"><span>Anon key</span><strong id="connectionAnonKey">—</strong></div>
+          <div class="connection-cell"><span>Bucket</span><strong id="connectionBucket">—</strong></div>
+          <div class="connection-cell"><span>Auth</span><strong id="connectionAuth">—</strong></div>
+          <div class="connection-cell"><span>Categories</span><strong id="connectionCategories">—</strong></div>
+          <div class="connection-cell"><span>Items</span><strong id="connectionItems">—</strong></div>
+          <div class="connection-cell"><span>Storage</span><strong id="connectionStorage">—</strong></div>
+          <div class="connection-cell"><span>Session</span><strong id="connectionSession">—</strong></div>
+        </div>
+        <div id="connectionDetails" class="connection-details"></div>
+        <button id="testConnectionBtn" class="button button-primary button-wide" type="button">Проверить подключение</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="config.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
